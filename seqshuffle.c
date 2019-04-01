@@ -50,6 +50,8 @@ typedef struct _options_t {
   int help;
   int debug;
   int nohdr;
+  int seed_flag;
+  unsigned int seed;
 } options_t;
 
 static options_t options;
@@ -70,9 +72,6 @@ int regLen = 0;
 void 
 shuffle(int *array, int n)
 {   
-  // Use a different seed value so that we don't get same 
-  // result each time we run this program 
-  srand ( time(NULL) ); 
   if (n > 1) {
     for (int i = n-1; i > 0; i--) {
       // Pick a random index from 0 to i
@@ -238,8 +237,9 @@ main(int argc, char *argv[])
   mcheck(NULL);
   mtrace();
 #endif
+  options.seed_flag = 0;
   while (1) {
-    int c = getopt(argc, argv, "dhr:");
+    int c = getopt(argc, argv, "dhr:s:");
     if (c == -1)
       break;
     switch (c) {
@@ -251,6 +251,10 @@ main(int argc, char *argv[])
       break;
     case 'r':
       regLen = atoi(optarg);
+      break;
+    case 's':
+      options.seed = atoi(optarg);
+      options.seed_flag = 1;
       break;
     case '?':
       break;
@@ -265,6 +269,8 @@ main(int argc, char *argv[])
 	    "        -d        Print debug information\n"
 	    "        -h        Show this help text\n"
 	    "        -r <len>  Shuffle sequence(s) in regions of <len>bp (by default <len>=0).\n"
+	    "        -s <seed> Set the seed (integer) for the pseudo-random number generator algorithm.\n"
+	    "                  By default, time(0) is used as seed.\n"
 	    "\n\tPerform regional shuffling on a set of FASTA-formatted sequences-\n"
             "\tIf regional shuffling is not defined (option -r is not set), the entire\n"
             "\tsequence(s) is(are) shuffled.\n"
@@ -289,6 +295,13 @@ main(int argc, char *argv[])
   } else {
       fasta_in = stdin;
   }
+
+  // Use a different seed value so that we don't get same 
+  // result each time we run this program 
+  if (options.seed_flag)
+    srand (options.seed); 
+  else 
+    srand (time(NULL)); 
 
   if (options.debug != 0) {
     if (fasta_in != stdin) {
